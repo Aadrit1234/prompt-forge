@@ -404,8 +404,30 @@ export async function forgeWithOpenRouter({ input, domainLabel = "General", rigo
 
 export async function forgeWithGemini({ input, domainLabel = "General", rigor = "standard", model: modelOverride }) {
   const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
-  const model = modelOverride || process.env.GEMINI_MODEL || MODEL_CATALOG.gemini.default;
+  const requested =
+    modelOverride || process.env.GEMINI_MODEL || MODEL_CATALOG.gemini.default;
 
+  // Try the requested model first, then the rest of the catalog, so transient
+  // "high demand" or per-model availability errors (404/429/5xx) fall back
+  // gracefully instead of failing the request.
+  const candidates = [
+    requested,
+    ...MODEL_CATALOG.gemini.options.map((o) => o.id).filter((id) => id !== requested),
+  ];
+
+  let lastError = null;
+  for (const model of candidates) {
+    try {
+      return await geminiGenerate({ apiKey, model, input, domainLabel, rigor });
+    } catch (err) {
+      lastError = err;
+      if (![404, 429, 500, 503].includes(err.status)) throw err;
+    }
+  }
+  throw lastError;
+}
+
+async function geminiGenerate({ apiKey, model, input, domainLabel, rigor }) {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`,
     {
