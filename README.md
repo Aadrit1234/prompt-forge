@@ -32,6 +32,12 @@ Try it right now: **https://prompt-forge-beige-ten.vercel.app**
 
 Type any task, hit **Generate Prompt**, and you'll get an optimized prompt plus a breakdown of the techniques used.
 
+## 📸 Screenshots
+
+![Prompt Forge — task input with engine & model picker](docs/screenshot-app.png)
+
+![Prompt Forge — generated prompt with techniques report and usage estimate](docs/screenshot-result.png)
+
 ---
 
 ## 🧰 Tech stack
@@ -166,6 +172,7 @@ or `npm run dev`.
 │   ├── components/        # InputPanel, OutputPanel, HistorySection
 │   ├── App.jsx            # App shell & state
 │   └── styles.css
+├── docs/                  # README screenshots
 └── .env.example           # Env var template (placeholders only — never real keys)
 ```
 
