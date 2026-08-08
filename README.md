@@ -182,4 +182,4 @@ or `npm run dev`.
 
 ## 📜 License
 
-No license specified — all rights reserved by default. Contact the author if you'd like to use or contribute to this project.
+Released under the [MIT License](LICENSE). Feel free to use, modify, and share it — a link back is appreciated but not required.
