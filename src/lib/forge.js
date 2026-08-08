@@ -18,12 +18,14 @@ export const MODEL_CATALOG = {
     ],
   },
   gemini: {
-    default: "gemini-2.0-flash",
+    // Older 2.x models are no longer available to new accounts; 3.x is the
+    // current generation that works out of the box.
+    default: "gemini-3.6-flash",
     options: [
-      { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-      { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-      { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
       { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+      { id: "gemini-3.5-flash", label: "Gemini 3.5 Flash" },
+      { id: "gemini-flash-latest", label: "Gemini Flash (latest)" },
+      { id: "gemini-3-flash-preview", label: "Gemini 3 Flash Preview" },
     ],
   },
 };

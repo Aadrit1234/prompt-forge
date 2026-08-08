@@ -45,7 +45,7 @@ Optionally drop a `.env` file in the project root (the server auto-loads it, exi
 | `OPENROUTER_MODEL`      | `openrouter/auto`     | Model used by OpenRouter (any model it offers)   |
 | `GOOGLE_API_KEY`        | — (optional)          | Enables the Gemini backend (AI Studio key)       |
 | `GEMINI_API_KEY`        | — (optional)          | Alias for `GOOGLE_API_KEY`                       |
-| `GEMINI_MODEL`          | `gemini-2.0-flash`    | Gemini model used to forge prompts               |
+| `GEMINI_MODEL`          | `gemini-3.6-flash`    | Gemini model used to forge prompts (2.x is deprecated for new accounts) |
 | `ANTHROPIC_API_KEY`     | — (optional)          | Enables the Anthropic backend                    |
 | `ANTHROPIC_MODEL`       | `claude-sonnet-4-5`   | Anthropic model used to forge prompts            |
 | `FORGE_ENGINE`          | — (optional)          | Force an engine: `openrouter`, `gemini`, `anthropic`, `ollama`, or `local` |
