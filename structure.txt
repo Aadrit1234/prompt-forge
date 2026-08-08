@@ -1,0 +1,621 @@
+Content is user-generated and unverified.
+
+
+10
+Learn how to customize
+import React, { useState, useEffect, useRef } from "react";
+import { Terminal, Copy, Check, Loader2, X, Clock, ArrowRight, AlertCircle, Gauge } from "lucide-react";
+
+const COLORS = {
+  bg: "#ECEFF2",
+  surface: "#FFFFFF",
+  border: "#DCE1E6",
+  borderLight: "#C9D0D7",
+  textPrimary: "#12181F",
+  textSecondary: "#55636F",
+  textTertiary: "#8B97A1",
+  teal: "#0E8F82",
+  tealTint: "#E3F5F2",
+  amber: "#B8752A",
+  red: "#C94A38",
+  onAccent: "#FFFFFF",
+};
+
+const DOMAINS = [
+  { id: "general", label: "General" },
+  { id: "code", label: "Code" },
+  { id: "write", label: "Write" },
+  { id: "analyze", label: "Analyze" },
+  { id: "research", label: "Research" },
+  { id: "data", label: "Data" },
+];
+
+const LOADING_STEPS = [
+  "Parsing intent",
+  "Extracting constraints",
+  "Binding role & context",
+  "Selecting output format",
+  "Locking structure",
+];
+
+const PLAN_PRESETS = [
+  { id: "free", label: "Free", dailyTokenBudget: 12000 },
+  { id: "pro", label: "Pro", dailyTokenBudget: 60000 },
+  { id: "max5", label: "Max 5x", dailyTokenBudget: 300000 },
+  { id: "max20", label: "Max 20x", dailyTokenBudget: 1200000 },
+];
+
+const SYSTEM_PROMPT = `You are an expert prompt engineer. A user will describe, in casual natural language, a task they want an AI model to complete. Your job is to transform their description into a single, complete, ready-to-use prompt that will reliably produce the best possible result when given to an AI model.
+
+Guidelines:
+- Infer the user's true goal even if their description is vague, and make reasonable assumptions explicit within the prompt rather than leaving them ambiguous.
+- Apply prompt-engineering techniques ONLY where they genuinely improve the outcome for this specific task: assigning a role or persona, stating the objective and audience, providing necessary context and constraints, specifying output format/length/structure, requesting step-by-step reasoning for complex or multi-step tasks, including a short illustrative example when it would remove ambiguity, and stating what to avoid or how to handle edge cases.
+- Do not over-engineer a simple task. A one-line request deserves a tight, precise prompt, not a padded template.
+- If the optimization depth hint is "deep", be more thorough: add relevant examples, explicit reasoning steps, and edge-case handling where appropriate.
+- Write the optimized prompt as if the user is speaking directly to the AI model (first person imperative instructions), ready to paste and send as-is.
+- Never include placeholder brackets like [insert X] unless the user's own task genuinely requires a variable input; prefer being concrete.
+
+Respond with ONLY valid JSON, no markdown code fences, no preamble, no trailing text, in exactly this shape:
+{"optimized_prompt": "the full optimized prompt as a single string, using \\n for line breaks", "techniques_applied": [{"name": "short technique name", "why": "one short sentence on why it helps for this task"}], "domain": "a short 1-3 word label for the task domain"}
+
+Include 2 to 5 entries in techniques_applied, chosen only from techniques you actually used.`;
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+function estimateTokens(text) {
+  return Math.max(1, Math.ceil((text || "").length / 4));
+}
+
+function formatPercent(p) {
+  if (p < 0.1) return "<0.1%";
+  if (p < 10) return `${p.toFixed(1)}%`;
+  return `${Math.round(p)}%`;
+}
+
+export default function PromptForge() {
+  const [input, setInput] = useState("");
+  const [domain, setDomain] = useState("general");
+  const [rigor, setRigor] = useState("standard");
+  const [plan, setPlan] = useState("pro");
+  const [loading, setLoading] = useState(false);
+  const [logStep, setLogStep] = useState(0);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [mounted, setMounted] = useState(false);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+    (async () => {
+      try {
+        const res = await window.storage.get("history");
+        if (res && res.value) setHistory(JSON.parse(res.value));
+      } catch (e) {
+        // no history yet
+      }
+    })();
+    return () => clearInterval(intervalRef.current);
+  }, []);
+
+  async function saveHistory(newHistory) {
+    setHistory(newHistory);
+    try {
+      await window.storage.set("history", JSON.stringify(newHistory));
+    } catch (e) {
+      // ignore storage failure, non-critical
+    }
+  }
+
+  async function handleGenerate() {
+    if (!input.trim() || loading) return;
+    setError(null);
+    setResult(null);
+    setLoading(true);
+    setLogStep(0);
+
+    let i = 0;
+    intervalRef.current = setInterval(() => {
+      i += 1;
+      setLogStep(i);
+      if (i >= LOADING_STEPS.length) clearInterval(intervalRef.current);
+    }, 480);
+
+    const domainLabel = DOMAINS.find((d) => d.id === domain)?.label || "General";
+    const userMsg = `Task type hint: ${domainLabel}\nOptimization depth: ${rigor}\n\nUser's plain-language task description:\n"""\n${input.trim()}\n"""`;
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userMsg }],
+        }),
+      });
+
+      if (!response.ok) throw new Error("Request failed");
+
+      const data = await response.json();
+      const text = (data.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n");
+      const clean = text.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(clean);
+
+      if (!parsed || !parsed.optimized_prompt) throw new Error("Malformed response");
+
+      setResult(parsed);
+
+      const entry = {
+        id: Date.now().toString(),
+        input: input.trim(),
+        domain: parsed.domain || domainLabel,
+        techniques: parsed.techniques_applied || [],
+        output: parsed.optimized_prompt,
+        ts: Date.now(),
+      };
+      const newHistory = [entry, ...history].slice(0, 20);
+      saveHistory(newHistory);
+    } catch (e) {
+      setError("Generation failed — the model returned something unexpected. Try again.");
+    } finally {
+      clearInterval(intervalRef.current);
+      setLoading(false);
+    }
+  }
+
+  function handleKeyDown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleGenerate();
+    }
+  }
+
+  async function handleCopy() {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(result.optimized_prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (e) {
+      // clipboard unavailable
+    }
+  }
+
+  function loadHistoryItem(item) {
+    setInput(item.input);
+    setResult({
+      optimized_prompt: item.output,
+      techniques_applied: item.techniques,
+      domain: item.domain,
+    });
+    setError(null);
+  }
+
+  function deleteHistoryItem(id, e) {
+    e.stopPropagation();
+    const newHistory = history.filter((h) => h.id !== id);
+    saveHistory(newHistory);
+  }
+
+  const activePlan = PLAN_PRESETS.find((p) => p.id === plan) || PLAN_PRESETS[1];
+  const tokenCount = result ? estimateTokens(result.optimized_prompt) : 0;
+  const usagePercent = result ? (tokenCount / activePlan.dailyTokenBudget) * 100 : 0;
+
+  return (
+    <div
+      className="min-h-screen w-full px-4 py-10 sm:px-8 sm:py-14"
+      style={{ background: COLORS.bg, color: COLORS.textPrimary, fontFamily: "'Inter', sans-serif" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes blink {
+          0%, 45% { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes growBar {
+          from { width: 0%; }
+        }
+        .log-line {
+          animation: fadeSlideIn 0.35s ease both;
+        }
+        .cursor-blink {
+          animation: blink 1.1s step-start infinite;
+        }
+        .mount-fade {
+          animation: fadeIn 0.6s ease both;
+        }
+        .bar-fill {
+          animation: growBar 0.5s ease both;
+        }
+        textarea::placeholder {
+          color: ${COLORS.textTertiary};
+        }
+        textarea:focus, button:focus-visible, a:focus-visible {
+          outline: 2px solid ${COLORS.teal};
+          outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .log-line, .cursor-blink, .mount-fade, .bar-fill { animation: none !important; }
+        }
+      `}</style>
+
+      <div className="mx-auto max-w-5xl">
+        {/* Header */}
+        <header className={mounted ? "mount-fade mb-10" : "mb-10"}>
+          <div
+            className="mb-3 inline-flex items-center gap-2 rounded px-2.5 py-1 text-xs"
+            style={{ fontFamily: "'JetBrains Mono', monospace", color: COLORS.teal, background: COLORS.tealTint, border: `1px solid ${COLORS.teal}33` }}
+          >
+            <Terminal size={13} strokeWidth={2} />
+            <span>$ forge --generate</span>
+          </div>
+          <h1
+            className="mb-3 text-3xl leading-tight sm:text-4xl"
+            style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, color: COLORS.textPrimary }}
+          >
+            Say the task. Get the prompt that actually works.
+          </h1>
+          <p className="max-w-xl text-sm sm:text-base" style={{ color: COLORS.textSecondary }}>
+            Describe what you want in plain language. Prompt Forge turns it into a precise,
+            structured prompt using the techniques that actually move model output.
+          </p>
+        </header>
+
+        {/* Main grid */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {/* INPUT PANEL */}
+          <div
+            className="flex flex-col rounded-lg"
+            style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+          >
+            <PanelTab label="intent.txt" dotColor={COLORS.amber} />
+            <div className="flex flex-col gap-4 p-4 sm:p-5">
+              <div className="flex flex-wrap gap-1.5">
+                {DOMAINS.map((d) => {
+                  const active = domain === d.id;
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => setDomain(d.id)}
+                      className="rounded-full px-3 py-1 text-xs transition-colors"
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        border: `1px solid ${active ? COLORS.teal : COLORS.border}`,
+                        color: active ? COLORS.teal : COLORS.textSecondary,
+                        background: active ? COLORS.tealTint : "transparent",
+                      }}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g. help me write a follow-up email to a recruiter who went quiet after my interview"
+                rows={7}
+                className="w-full resize-none rounded-md p-3 text-sm leading-relaxed"
+                style={{
+                  background: COLORS.bg,
+                  border: `1px solid ${COLORS.border}`,
+                  color: COLORS.textPrimary,
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              />
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1 rounded-md p-0.5" style={{ border: `1px solid ${COLORS.border}` }}>
+                  {["standard", "deep"].map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setRigor(r)}
+                      className="rounded px-2.5 py-1 text-xs capitalize transition-colors"
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        color: rigor === r ? COLORS.onAccent : COLORS.textSecondary,
+                        background: rigor === r ? COLORS.teal : "transparent",
+                      }}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleGenerate}
+                  disabled={!input.trim() || loading}
+                  className="flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity"
+                  style={{
+                    background: COLORS.teal,
+                    color: COLORS.onAccent,
+                    opacity: !input.trim() || loading ? 0.5 : 1,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" /> Generating
+                    </>
+                  ) : (
+                    <>
+                      Generate Prompt <ArrowRight size={15} />
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-xs" style={{ color: COLORS.textTertiary }}>
+                ⌘/Ctrl + Enter to generate
+              </p>
+            </div>
+          </div>
+
+          {/* OUTPUT PANEL */}
+          <div
+            className="flex flex-col rounded-lg"
+            style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+          >
+            <PanelTab label="prompt.md" dotColor={COLORS.teal} />
+            <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
+              {!loading && !result && !error && (
+                <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
+                  <p
+                    className="text-sm"
+                    style={{ color: COLORS.textTertiary, fontFamily: "'JetBrains Mono', monospace" }}
+                  >
+                    awaiting input <span className="cursor-blink">▍</span>
+                  </p>
+                </div>
+              )}
+
+              {loading && (
+                <div className="flex flex-col gap-2 py-2">
+                  {LOADING_STEPS.map((step, idx) => {
+                    if (idx >= logStep) return null;
+                    const isCurrent = idx === logStep - 1;
+                    return (
+                      <div
+                        key={step}
+                        className="log-line flex items-center gap-2 text-sm"
+                        style={{ fontFamily: "'JetBrains Mono', monospace", color: COLORS.textSecondary }}
+                      >
+                        {isCurrent ? (
+                          <Loader2 size={13} className="animate-spin" style={{ color: COLORS.amber }} />
+                        ) : (
+                          <Check size={13} style={{ color: COLORS.teal }} />
+                        )}
+                        <span>[{idx + 1}] {step}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {error && (
+                <div
+                  className="flex items-start gap-2 rounded-md p-3 text-sm"
+                  style={{ background: COLORS.red + "12", border: `1px solid ${COLORS.red}44`, color: COLORS.red }}
+                >
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  <div>
+                    <p className="mb-2">{error}</p>
+                    <button
+                      onClick={handleGenerate}
+                      className="rounded px-2.5 py-1 text-xs"
+                      style={{ border: `1px solid ${COLORS.red}66`, color: COLORS.red, fontFamily: "'JetBrains Mono', monospace" }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {result && !loading && (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <span
+                      className="inline-block rounded-full px-2.5 py-0.5 text-xs"
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        color: COLORS.amber,
+                        border: `1px solid ${COLORS.amber}55`,
+                      }}
+                    >
+                      domain: {result.domain || "general"}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    {(result.techniques_applied || []).map((t, idx) => (
+                      <div key={idx} className="log-line" style={{ animationDelay: `${idx * 60}ms` }}>
+                        <div
+                          className="flex items-center gap-2 text-sm"
+                          style={{ fontFamily: "'JetBrains Mono', monospace", color: COLORS.textPrimary }}
+                        >
+                          <Check size={13} style={{ color: COLORS.teal }} />
+                          <span>[{idx + 1}] {t.name}</span>
+                        </div>
+                        {t.why && (
+                          <p className="ml-5 text-xs" style={{ color: COLORS.textTertiary }}>
+                            {t.why}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="relative">
+                    <div
+                      className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded-md p-3 pr-10 text-sm leading-relaxed"
+                      style={{
+                        background: COLORS.bg,
+                        border: `1px solid ${COLORS.border}`,
+                        color: COLORS.textPrimary,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {result.optimized_prompt}
+                    </div>
+                    <button
+                      onClick={handleCopy}
+                      className="absolute right-2 top-2 flex items-center gap-1 rounded px-2 py-1 text-xs"
+                      style={{
+                        background: COLORS.surface,
+                        border: `1px solid ${COLORS.borderLight}`,
+                        color: copied ? COLORS.teal : COLORS.textSecondary,
+                        fontFamily: "'JetBrains Mono', monospace",
+                      }}
+                    >
+                      {copied ? <Check size={13} /> : <Copy size={13} />}
+                      {copied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+
+                  {/* USAGE ESTIMATE */}
+                  <div className="rounded-md p-3" style={{ border: `1px solid ${COLORS.border}`, background: COLORS.bg }}>
+                    <div
+                      className="mb-2.5 flex items-center gap-1.5 text-xs"
+                      style={{ fontFamily: "'JetBrains Mono', monospace", color: COLORS.textSecondary }}
+                    >
+                      <Gauge size={13} />
+                      <span>usage estimate</span>
+                    </div>
+
+                    <div className="mb-2.5 flex flex-wrap gap-1.5">
+                      {PLAN_PRESETS.map((p) => {
+                        const active = plan === p.id;
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => setPlan(p.id)}
+                            className="rounded-full px-2.5 py-0.5 text-xs transition-colors"
+                            style={{
+                              fontFamily: "'JetBrains Mono', monospace",
+                              border: `1px solid ${active ? COLORS.teal : COLORS.border}`,
+                              color: active ? COLORS.teal : COLORS.textSecondary,
+                              background: active ? COLORS.tealTint : COLORS.surface,
+                            }}
+                          >
+                            {p.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mb-1.5 flex items-baseline justify-between text-xs" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      <span style={{ color: COLORS.textSecondary }}>≈ {tokenCount} tokens</span>
+                      <span style={{ color: COLORS.textPrimary, fontWeight: 600 }}>
+                        {formatPercent(usagePercent)} of {activePlan.label} daily estimate
+                      </span>
+                    </div>
+
+                    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: COLORS.border }}>
+                      <div
+                        className="bar-fill h-full rounded-full"
+                        style={{ width: `${Math.min(usagePercent, 100)}%`, background: COLORS.teal }}
+                      />
+                    </div>
+
+                    <p className="mt-2 text-xs leading-relaxed" style={{ color: COLORS.textTertiary }}>
+                      Rough estimate from prompt length only (~4 characters/token). Anthropic's real limits are
+                      dynamic — they vary with demand, conversation length, and change over time.{" "}
+                      <a
+                        href="https://support.claude.com/en/articles/8325606-what-is-the-pro-plan"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: COLORS.teal, textDecoration: "underline" }}
+                      >
+                        Check current limits
+                      </a>
+                      .
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* HISTORY */}
+        {history.length > 0 && (
+          <div className="mt-8">
+            <div className="mb-3 flex items-center gap-2 text-xs" style={{ color: COLORS.textTertiary, fontFamily: "'JetBrains Mono', monospace" }}>
+              <Clock size={13} />
+              <span>recent prompts</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {history.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => loadHistoryItem(item)}
+                  className="group relative flex w-56 shrink-0 flex-col gap-1.5 rounded-md p-3 text-left"
+                  style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className="rounded-full px-2 py-0.5 text-xs"
+                      style={{ color: COLORS.amber, border: `1px solid ${COLORS.amber}44`, fontFamily: "'JetBrains Mono', monospace" }}
+                    >
+                      {item.domain}
+                    </span>
+                    <span
+                      onClick={(e) => deleteHistoryItem(item.id, e)}
+                      className="opacity-0 transition-opacity group-hover:opacity-100"
+                      style={{ color: COLORS.textTertiary }}
+                    >
+                      <X size={13} />
+                    </span>
+                  </div>
+                  <p className="line-clamp-2 text-xs" style={{ color: COLORS.textSecondary }}>
+                    {item.input}
+                  </p>
+                  <span className="text-xs" style={{ color: COLORS.textTertiary, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {timeAgo(item.ts)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PanelTab({ label, dotColor }) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-xs"
+      style={{ borderBottom: `1px solid ${COLORS.border}`, fontFamily: "'JetBrains Mono', monospace", color: COLORS.textSecondary }}
+    >
+      <span className="h-2 w-2 rounded-full" style={{ background: dotColor }} />
+      {label}
+    </div>
+  );
+}
