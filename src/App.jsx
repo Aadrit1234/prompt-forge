@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Terminal,
   Wand2,
@@ -8,6 +8,8 @@ import {
   ArrowRight,
   Lock,
   Cpu,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { DOMAINS, LOADING_STEPS, PLAN_PRESETS } from "./lib/constants.js";
 import { estimateTokens, formatPercent, copyText } from "./lib/utils.js";
@@ -16,6 +18,8 @@ import OutputPanel from "./components/OutputPanel.jsx";
 import HistorySection from "./components/HistorySection.jsx";
 
 const HISTORY_KEY = "prompt-forge-history";
+const DRAFT_KEY = "prompt-forge-draft";
+const THEME_KEY = "prompt-forge-theme";
 
 const KEYED_ENGINE_IDS = ["openrouter", "gemini"];
 const ENGINE_LABELS = {
@@ -35,11 +39,36 @@ function loadHistory() {
   }
 }
 
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return d && typeof d === "object" ? d : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadTheme() {
+  try {
+    return (
+      localStorage.getItem(THEME_KEY) ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    );
+  } catch {
+    return "light";
+  }
+}
+
 export default function App() {
-  const [input, setInput] = useState("");
-  const [domain, setDomain] = useState("general");
-  const [rigor, setRigor] = useState("standard");
-  const [plan, setPlan] = useState("pro");
+  // Restore the last draft (input + settings) and preferred theme on load.
+  const [draft] = useState(loadDraft);
+  const [input, setInput] = useState(() => draft?.input ?? "");
+  const [domain, setDomain] = useState(() => draft?.domain ?? "general");
+  const [rigor, setRigor] = useState(() => draft?.rigor ?? "standard");
+  const [plan, setPlan] = useState(() => draft?.plan ?? "pro");
+  const [theme, setTheme] = useState(loadTheme);
   const [loading, setLoading] = useState(false);
   const [logStep, setLogStep] = useState(0);
   const [result, setResult] = useState(null);
@@ -67,6 +96,28 @@ export default function App() {
       .catch(() => setEngineInfo(null));
   }, []);
 
+  // Persist theme and apply it to <html>.
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      /* storage unavailable — non-critical */
+    }
+  }, [theme]);
+
+  // Autosave the draft (debounced) so a refresh never loses work.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ input, domain, rigor, plan }));
+      } catch {
+        /* storage unavailable — non-critical */
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [input, domain, rigor, plan]);
+
   useEffect(() => {
     return () => {
       clearInterval(intervalRef.current);
@@ -75,9 +126,15 @@ export default function App() {
   }, []);
 
   function saveHistory(next) {
-    setHistory(next);
+    // Pinned entries are never evicted; the rest are capped at the newest 20.
+    const pinned = next.filter((h) => h.pinned);
+    const total = Math.max(20, pinned.length);
+    const kept = [...pinned, ...next.filter((h) => !h.pinned)].sort((a, b) =>
+      a.pinned === b.pinned ? b.ts - a.ts : a.pinned ? -1 : 1
+    ).slice(0, total);
+    setHistory(kept);
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(kept));
     } catch {
       /* storage unavailable — non-critical */
     }
@@ -125,8 +182,9 @@ export default function App() {
         techniques: data.techniques_applied || [],
         output: data.optimized_prompt,
         ts: Date.now(),
+        pinned: false,
       };
-      saveHistory([entry, ...history].slice(0, 20));
+      saveHistory([entry, ...history]);
     } catch (e) {
       setError(e.message || "Generation failed. Try again.");
     } finally {
@@ -171,6 +229,68 @@ export default function App() {
     saveHistory(history.filter((h) => h.id !== id));
   }
 
+  function togglePin(id) {
+    saveHistory(history.map((h) => (h.id === id ? { ...h, pinned: !h.pinned } : h)));
+  }
+
+  function clearHistory() {
+    saveHistory([]);
+  }
+
+  function exportHistory() {
+    const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "prompt-forge-history.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importHistory(file) {
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed)) throw new Error("not a history export (expected a JSON array)");
+      const valid = parsed.filter(
+        (h) =>
+          h && typeof h.id === "string" && typeof h.input === "string" && typeof h.output === "string"
+      );
+      if (valid.length === 0) throw new Error("no valid history entries in that file");
+      const byId = new Map(history.map((h) => [h.id, h]));
+      let added = 0;
+      for (const h of valid) {
+        if (!byId.has(h.id)) {
+          byId.set(h.id, h);
+          added += 1;
+        }
+      }
+      saveHistory([...byId.values()]);
+      return { ok: true, added };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
+
+  // Stats derived from local history.
+  const stats = useMemo(() => {
+    if (history.length === 0) return null;
+    const domainCounts = {};
+    let totalTokens = 0;
+    for (const h of history) {
+      const d = h.domain || "general";
+      domainCounts[d] = (domainCounts[d] || 0) + 1;
+      totalTokens += estimateTokens(h.output);
+    }
+    const [topDomain] = Object.entries(domainCounts).sort((a, b) => b[1] - a[1])[0];
+    return {
+      count: history.length,
+      topDomain,
+      topCount: domainCounts[topDomain],
+      totalTokens,
+    };
+  }, [history]);
+
   const activePlan = PLAN_PRESETS.find((p) => p.id === plan) || PLAN_PRESETS[1];
   const tokenCount = result ? estimateTokens(result.optimized_prompt) : 0;
   const usagePercent = result ? (tokenCount / activePlan.dailyTokenBudget) * 100 : 0;
@@ -202,12 +322,24 @@ export default function App() {
 
       {/* Hero */}
       <header className="hero">
-        <div className="reveal" style={{ animationDelay: "0ms" }}>
-          <span className="badge">
-            <span className="dot" />
-            <Terminal size={13} strokeWidth={2.2} />
-            $ forge --generate
-          </span>
+        <div className="hero-top">
+          <div className="reveal" style={{ animationDelay: "0ms" }}>
+            <span className="badge">
+              <span className="dot" />
+              <Terminal size={13} strokeWidth={2.2} />
+              $ forge --generate
+            </span>
+          </div>
+          <button
+            type="button"
+            className="theme-toggle reveal"
+            style={{ animationDelay: "0ms" }}
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
         </div>
         <h1 className="hero-title reveal" style={{ animationDelay: "80ms" }}>
           Say the task. Get the prompt that <span className="grad">actually works</span>.
@@ -275,7 +407,16 @@ export default function App() {
 
       {/* History */}
       {history.length > 0 && (
-        <HistorySection history={history} onLoad={loadHistoryItem} onDelete={deleteHistoryItem} />
+        <HistorySection
+          history={history}
+          stats={stats}
+          onLoad={loadHistoryItem}
+          onDelete={deleteHistoryItem}
+          onTogglePin={togglePin}
+          onClear={clearHistory}
+          onExport={exportHistory}
+          onImport={importHistory}
+        />
       )}
 
       {/* Footer */}

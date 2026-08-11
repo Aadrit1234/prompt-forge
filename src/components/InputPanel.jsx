@@ -12,7 +12,7 @@ import {
   Keyboard,
   Cpu,
 } from "lucide-react";
-import { DOMAINS, EXAMPLES } from "../lib/constants.js";
+import { DOMAINS, EXAMPLES, RIGOR_OPTIONS } from "../lib/constants.js";
 
 const ENGINE_NAMES = { openrouter: "OpenRouter", gemini: "Gemini" };
 
@@ -181,14 +181,15 @@ export default function InputPanel({
         {/* Footer controls */}
         <div className="input-footer">
           <div className="segmented" role="group" aria-label="Optimization depth">
-            {["standard", "deep"].map((r) => (
+            {RIGOR_OPTIONS.map((r) => (
               <button
-                key={r}
+                key={r.id}
                 type="button"
-                className={rigor === r ? "active" : ""}
-                onClick={() => setRigor(r)}
+                className={rigor === r.id ? "active" : ""}
+                onClick={() => setRigor(r.id)}
+                title={r.id === "quick" ? "Minimal prompt — role, objective, scope" : r.id === "deep" ? "Adds step-by-step reasoning and edge cases" : "Balanced structure with constraints and format"}
               >
-                {r}
+                {r.label}
               </button>
             ))}
           </div>

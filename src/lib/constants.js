@@ -8,6 +8,7 @@ export const DOMAINS = [
 ];
 
 export const RIGOR_OPTIONS = [
+  { id: "quick", label: "Quick" },
   { id: "standard", label: "Standard" },
   { id: "deep", label: "Deep" },
 ];

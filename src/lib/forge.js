@@ -36,6 +36,7 @@ Guidelines:
 - Infer the user's true goal even if their description is vague, and make reasonable assumptions explicit within the prompt rather than leaving them ambiguous.
 - Apply prompt-engineering techniques ONLY where they genuinely improve the outcome for this specific task: assigning a role or persona, stating the objective and audience, providing necessary context and constraints, specifying output format/length/structure, requesting step-by-step reasoning for complex or multi-step tasks, including a short illustrative example when it would remove ambiguity, and stating what to avoid or how to handle edge cases.
 - Do not over-engineer a simple task. A one-line request deserves a tight, precise prompt, not a padded template.
+- If the optimization depth hint is "quick", keep the prompt minimal: role, objective, and a one-line scope note at most.
 - If the optimization depth hint is "deep", be more thorough: add relevant examples, explicit reasoning steps, and edge-case handling where appropriate.
 - Write the optimized prompt as if the user is speaking directly to the AI model (first person imperative instructions), ready to paste and send as-is.
 - Never include placeholder brackets like [insert X] unless the user's own task genuinely requires a variable input; prefer being concrete.
@@ -220,6 +221,7 @@ export function forgeLocally({ input, domainLabel = "General", rigor = "standard
   const key = DOMAIN_KEYS[domainLabel] || "general";
   const profile = DOMAIN_PROFILES[key];
   const deep = rigor === "deep";
+  const quick = rigor === "quick";
 
   const bullets = (items) => items.map((item) => `- ${item}`).join("\n");
   const compact = task.length < 80;
@@ -227,7 +229,7 @@ export function forgeLocally({ input, domainLabel = "General", rigor = "standard
   let optimizedPrompt;
   let techniqueKeys;
 
-  if (compact) {
+  if (compact || quick) {
     optimizedPrompt = [
       profile.role,
       "",

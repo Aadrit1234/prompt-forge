@@ -17,12 +17,15 @@
 - **Model picker** — when an OpenRouter or Gemini key is configured, choose the **engine and model per request** right in the UI (or leave it on the server default)
 - **Five AI backends** — OpenRouter, Gemini (Google AI Studio), Anthropic, local Ollama, and a built-in **zero-setup local engine** that needs no key at all
 - **Domain hints** — General, Code, Write, Analyze, Research, Data
-- **Standard / Deep** depth toggle — Deep adds step-by-step reasoning and edge-case handling
+- **Quick / Standard / Deep** depth toggle — Quick keeps the prompt minimal, Standard balances structure and constraints, Deep adds step-by-step reasoning and edge-case handling
 - **Techniques report** — every prompt comes with a list of what was applied and *why*
 - **Usage estimate** — token count and rough daily-budget percentage (Free / Pro / Max 5× / Max 20×)
-- **History** — your last 20 forges, stored locally in the browser
+- **History** — your last forges, stored locally in the browser, with **pin** (never evicted), **search**, **export/import as JSON**, and clear-all
+- **Draft autosave** — your input and settings survive refreshes, so you never lose work
+- **Dark mode** — toggle in the header (persisted, follows your system preference by default)
+- **Stats strip** — total prompts forged, top domain, and estimated tokens
 - **One-click copy**, `.md` download, and **Ctrl/Cmd + Enter** to generate
-- Light, minimal, animated UI with [Lucide](https://lucide.dev) icons
+- Light & dark minimal, animated UI with [Lucide](https://lucide.dev) icons
 
 ---
 
