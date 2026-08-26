@@ -35,7 +35,7 @@
 
 /* Light theme — cerulean to sky blue */
 :root[data-theme="light"] {
-  --bg: #e8f4fa;
+  --bg: #f0f9ff;
   --glass-bg: #ffffff;
   --glass-bg-hover: #f8fbff;
   --glass-border: rgba(8, 145, 178, 0.15);
