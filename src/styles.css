@@ -4,8 +4,8 @@
 
 :root {
   --bg: #0b0f1a;
-  --glass-bg: rgba(15, 20, 35, 0.65);
-  --glass-bg-hover: rgba(20, 28, 50, 0.75);
+  --glass-bg: rgba(30, 40, 65, 0.55);
+  --glass-bg-hover: rgba(40, 55, 85, 0.65);
   --glass-border: rgba(30, 58, 110, 0.5);
   --glass-border-strong: rgba(50, 90, 160, 0.6);
   --glass-blur: 20px;
@@ -381,7 +381,7 @@ h1.hero-title {
   gap: 10px;
   padding: 13px 20px;
   border-bottom: 1px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 [data-theme="light"] .panel-tab {
@@ -477,7 +477,7 @@ h1.hero-title {
   padding: 14px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: var(--text-1);
@@ -535,7 +535,7 @@ h1.hero-title {
   padding: 9px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: var(--text-1);
@@ -595,7 +595,7 @@ h1.hero-title {
   padding: 3px;
   border-radius: 12px;
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   gap: 2px;
@@ -869,7 +869,7 @@ h1.hero-title {
   padding-right: 48px;
   border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: var(--text-1);
