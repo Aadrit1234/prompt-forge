@@ -35,11 +35,11 @@
 
 /* Light theme — cerulean to sky blue */
 :root[data-theme="light"] {
-  --bg: #f0f9ff;
-  --glass-bg: rgba(224, 242, 254, 0.85);
-  --glass-bg-hover: rgba(207, 234, 251, 0.9);
-  --glass-border: rgba(125, 211, 252, 0.35);
-  --glass-border-strong: rgba(56, 189, 248, 0.45);
+  --bg: #E1F5FE;
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #f8fbff;
+  --glass-border: rgba(3, 155, 229, 0.15);
+  --glass-border-strong: rgba(3, 155, 229, 0.3);
   --glass-blur: 24px;
   --text-1: #0f172a;
   --text-2: #475569;
@@ -98,7 +98,7 @@ body {
 
 :root[data-theme="light"] .bg-layer {
   background:
-    radial-gradient(ellipse at 50% 50%, #e0f2fe 0%, #bae6fd 30%, #7dd3fc 65%, #38bdf8 100%);
+    radial-gradient(ellipse at 50% 50%, #E1F5FE 0%, #B3E5FC 30%, #4FC3F7 60%, #039BE5 100%);
 }
 
 /* ------------------------------------------------------------------ */
@@ -380,7 +380,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .panel-tab {
-  background: rgba(224, 242, 254, 0.85);
+  background: #ffffff;
 }
 
 .panel-tab-left {
@@ -483,7 +483,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .forge-input {
-  background: rgba(224, 242, 254, 0.85);
+  background: #ffffff;
 }
 
 .forge-input::placeholder {
@@ -541,7 +541,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .model-select {
-  background: rgba(224, 242, 254, 0.85);
+  background: #ffffff;
 }
 
 .model-select:hover {
@@ -597,7 +597,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .segmented {
-  background: rgba(224, 242, 254, 0.6);
+  background: #ffffff;
 }
 
 .segmented button {
@@ -877,7 +877,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .prompt-box {
-  background: rgba(224, 242, 254, 0.85);
+  background: #ffffff;
 }
 
 .prompt-box-actions {
