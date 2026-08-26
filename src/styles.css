@@ -3,11 +3,11 @@
 /* ------------------------------------------------------------------ */
 
 :root {
-  --bg: #0a1628;
-  --glass-bg: rgba(56, 120, 200, 0.12);
-  --glass-bg-hover: rgba(56, 120, 200, 0.18);
-  --glass-border: rgba(56, 120, 200, 0.2);
-  --glass-border-strong: rgba(56, 150, 230, 0.35);
+  --bg: #003179;
+  --glass-bg: #23395d;
+  --glass-bg-hover: #2a4370;
+  --glass-border: rgba(0, 104, 204, 0.3);
+  --glass-border-strong: rgba(0, 104, 204, 0.5);
   --glass-blur: 20px;
   --text-1: #e8edf5;
   --text-2: #a0afc4;
@@ -93,7 +93,7 @@ body {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(ellipse at 50% 50%, #112240 0%, #0d1b33 40%, #0a1628 80%, #060e1e 100%);
+    radial-gradient(ellipse at 50% 50%, #0068cc 0%, #004fa0 35%, #003a7a 65%, #003179 100%);
 }
 
 :root[data-theme="light"] .bg-layer {
