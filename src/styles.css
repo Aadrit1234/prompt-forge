@@ -100,10 +100,7 @@ body {
 
 :root[data-theme="light"] .bg-layer {
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.9) 0%, transparent 60%),
-    radial-gradient(ellipse at 30% 20%, rgba(14, 165, 233, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 70%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
-    var(--bg);
+    radial-gradient(ellipse at 50% 50%, #e0f2fe 0%, #bae6fd 35%, #7dd3fc 70%, #0891b2 100%);
 }
 
 /* ------------------------------------------------------------------ */
