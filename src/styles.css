@@ -3,11 +3,11 @@
 /* ------------------------------------------------------------------ */
 
 :root {
-  --bg: #0b0f1a;
-  --glass-bg: rgba(30, 40, 65, 0.55);
-  --glass-bg-hover: rgba(40, 55, 85, 0.65);
-  --glass-border: rgba(30, 58, 110, 0.5);
-  --glass-border-strong: rgba(50, 90, 160, 0.6);
+  --bg: #0a1628;
+  --glass-bg: rgba(56, 120, 200, 0.12);
+  --glass-bg-hover: rgba(56, 120, 200, 0.18);
+  --glass-border: rgba(56, 120, 200, 0.2);
+  --glass-border-strong: rgba(56, 150, 230, 0.35);
   --glass-blur: 20px;
   --text-1: #e8edf5;
   --text-2: #a0afc4;
@@ -36,10 +36,10 @@
 /* Light theme — cerulean to sky blue */
 :root[data-theme="light"] {
   --bg: #f0f9ff;
-  --glass-bg: #ffffff;
-  --glass-bg-hover: #f8fbff;
-  --glass-border: rgba(8, 145, 178, 0.15);
-  --glass-border-strong: rgba(8, 145, 178, 0.3);
+  --glass-bg: rgba(224, 242, 254, 0.85);
+  --glass-bg-hover: rgba(207, 234, 251, 0.9);
+  --glass-border: rgba(125, 211, 252, 0.35);
+  --glass-border-strong: rgba(56, 189, 248, 0.45);
   --glass-blur: 24px;
   --text-1: #0f172a;
   --text-2: #475569;
@@ -93,14 +93,12 @@ body {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(14, 165, 233, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 60%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
-    var(--bg);
+    radial-gradient(ellipse at 50% 50%, #112240 0%, #0d1b33 40%, #0a1628 80%, #060e1e 100%);
 }
 
 :root[data-theme="light"] .bg-layer {
   background:
-    radial-gradient(ellipse at 50% 50%, #e0f2fe 0%, #bae6fd 35%, #7dd3fc 70%, #a5f3fc 100%);
+    radial-gradient(ellipse at 50% 50%, #e0f2fe 0%, #bae6fd 30%, #7dd3fc 65%, #38bdf8 100%);
 }
 
 /* ------------------------------------------------------------------ */
@@ -382,7 +380,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .panel-tab {
-  background: #ffffff;
+  background: rgba(224, 242, 254, 0.85);
 }
 
 .panel-tab-left {
@@ -485,7 +483,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .forge-input {
-  background: #ffffff;
+  background: rgba(224, 242, 254, 0.85);
 }
 
 .forge-input::placeholder {
@@ -543,7 +541,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .model-select {
-  background: #ffffff;
+  background: rgba(224, 242, 254, 0.85);
 }
 
 .model-select:hover {
@@ -599,7 +597,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .segmented {
-  background: #f0f9ff;
+  background: rgba(224, 242, 254, 0.6);
 }
 
 .segmented button {
@@ -879,7 +877,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .prompt-box {
-  background: #ffffff;
+  background: rgba(224, 242, 254, 0.85);
 }
 
 .prompt-box-actions {
