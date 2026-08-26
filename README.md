@@ -184,6 +184,7 @@ or `npm run dev`.
 ## 🧯 Troubleshooting
 
 - **"Generation failed. Try again."** — Make sure `/api/health` returns 200. On Vercel, a 404 from `/api/*` means routing isn't configured — the explicit `builds` + `rewrites` in `vercel.json` are required (the Vite preset alone doesn't wire `/api` function routes).
+- **"The model's response was cut off before it finished"** — the model hit its token limit mid-response (most likely on **Deep** mode or long tasks). The server now retries once automatically with a concise-response nudge; if it still fails, shorten the task or pick a faster model. The old misleading message "The model call failed (network error)" was this same truncation bug — errors are now reported with their real cause.
 - **Gemini errors** — Older 2.x models (`gemini-2.0-flash`, `gemini-2.5-flash`) are **no longer available to new accounts**. The app defaults to `gemini-3.6-flash` and automatically falls back across the current 3.x models when one hits a transient "high demand" (404/429/5xx). If all models fail, check your quota in [AI Studio](https://aistudio.google.com/).
 - **Cold starts on Vercel** — A warm generation takes ~2s; cold starts can take ~9s, close to Vercel's free-tier function limit. If you see timeouts, pick a faster default model via `OPENROUTER_MODEL` / `GEMINI_MODEL`.
 - **Key not taking effect** — On Vercel, env var changes only apply after a redeploy: **Deployments → ⋯ → Redeploy**.

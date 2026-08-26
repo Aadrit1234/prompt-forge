@@ -201,7 +201,13 @@ app.post("/api/generate", async (req, res) => {
         const message =
           err.status === 401
             ? `${engine.label} rejected the API key. Check ${keyVar} on the server.`
-            : `The model call failed (${err.status || "network error"}). Try again in a moment.`;
+            : err.name === "TimeoutError"
+              ? `${engine.label} timed out waiting for the model. Try again in a moment.`
+              : err.reason === "truncated"
+                ? "The model's response was cut off before it finished. Try again."
+                : err.reason === "malformed"
+                  ? "The model returned an unparseable response. Try again."
+                  : `The model call failed (${err.status || "network error"}). Try again in a moment.`;
         return res.status(status).json({ error: message });
       }
       // Ollama failed — fall through to the next engine (usually local).

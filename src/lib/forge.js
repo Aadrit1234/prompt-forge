@@ -70,6 +70,44 @@ export function extractJson(text) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Shared retry helper                                                 */
+/* ------------------------------------------------------------------ */
+
+/* Long or "deep" outputs can be cut off mid-JSON — either because the
+   response exceeds the token budget, or because a reasoning model spends
+   its whole budget thinking and returns no text at all. When the first
+   attempt yields no usable JSON, retry once with a "keep it concise"
+   nudge so the request still succeeds instead of failing the user. */
+const CONCISE_NUDGE =
+  "\n\nNote: your previous response was cut off or was not valid JSON. " +
+  "Reply now with the exact same JSON shape but keep it concise — a few short sentences per " +
+  "field, valid JSON only, no code fences, no prose, no preamble.";
+
+/**
+ * Run one provider call, retrying once with a concise nudge if the model's
+ * response can't be parsed as the expected JSON. `request(extra)` must return
+ * `{ text, truncated }`; it may throw (upstream HTTP errors bubble up).
+ * Throws an Error carrying `reason` ("truncated" | "malformed") on failure.
+ */
+async function forgeModelCall({ provider, domainLabel, request }) {
+  let truncated = false;
+  for (const extra of ["", CONCISE_NUDGE]) {
+    const { text, truncated: wasTruncated } = await request(extra);
+    truncated = truncated || wasTruncated;
+    const result = normalizeModelResult(extractJson(text), domainLabel);
+    if (result) return result;
+  }
+  const err = new Error(
+    truncated
+      ? `${provider}: response cut off before valid JSON (token limit hit)`
+      : `${provider}: response was not valid JSON`
+  );
+  err.provider = provider;
+  err.reason = truncated ? "truncated" : "malformed";
+  throw err;
+}
+
+/* ------------------------------------------------------------------ */
 /* Local heuristic engine — no API key required                        */
 /* ------------------------------------------------------------------ */
 
@@ -311,27 +349,31 @@ export async function forgeWithOllama({ input, domainLabel = "General", rigor = 
   const model = pickOllamaModel(tags.models || []);
   if (!model) throw new Error("no ollama model");
 
-  const res = await fetch(`${ollamaUrl()}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(90000),
-    body: JSON.stringify({
-      model,
-      stream: false,
-      options: { temperature: 0.3 },
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserMessage(input.trim(), domainLabel, rigor) },
-      ],
-    }),
+  return forgeModelCall({
+    provider: "ollama",
+    domainLabel,
+    request: async (extra) => {
+      const res = await fetch(`${ollamaUrl()}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(90000),
+        body: JSON.stringify({
+          model,
+          stream: false,
+          // Explicit predict cap so long/deep outputs aren't silently truncated
+          // by Ollama's default num_predict.
+          options: { temperature: 0.3, num_predict: 4096 },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: buildUserMessage(input.trim(), domainLabel, rigor) + extra },
+          ],
+        }),
+      });
+      if (!res.ok) throw new Error(`ollama ${res.status}`);
+      const data = await res.json();
+      return { text: data?.message?.content || "", truncated: data?.done_reason === "length" };
+    },
   });
-  if (!res.ok) throw new Error(`ollama ${res.status}`);
-  const data = await res.json();
-  const text = data?.message?.content || "";
-  const parsed = extractJson(text);
-  const result = normalizeModelResult(parsed, domainLabel);
-  if (!result) throw new Error("malformed ollama response");
-  return result;
 }
 
 /* ------------------------------------------------------------------ */
@@ -339,32 +381,36 @@ export async function forgeWithOllama({ input, domainLabel = "General", rigor = 
 /* ------------------------------------------------------------------ */
 
 export async function forgeWithAnthropic({ input, domainLabel = "General", rigor = "standard", model }) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
+  return forgeModelCall({
+    provider: "anthropic",
+    domainLabel,
+    request: async (extra) => {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        signal: AbortSignal.timeout(90000),
+        body: JSON.stringify({
+          model: model || process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5",
+          max_tokens: 4096,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: buildUserMessage(input.trim(), domainLabel, rigor) + extra }],
+        }),
+      });
+
+      if (!res.ok) throw await upstreamError("anthropic", res);
+
+      const data = await res.json();
+      const text = (data.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n");
+      return { text, truncated: data.stop_reason === "max_tokens" };
     },
-    signal: AbortSignal.timeout(90000),
-    body: JSON.stringify({
-      model: model || process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5",
-      max_tokens: 1200,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildUserMessage(input.trim(), domainLabel, rigor) }],
-    }),
   });
-
-  if (!res.ok) throw await upstreamError("anthropic", res);
-
-  const data = await res.json();
-  const text = (data.content || [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("\n");
-  const result = normalizeModelResult(extractJson(text), domainLabel);
-  if (!result) throw new Error("malformed anthropic response");
-  return result;
 }
 
 /* ------------------------------------------------------------------ */
@@ -373,31 +419,38 @@ export async function forgeWithAnthropic({ input, domainLabel = "General", rigor
 /* ------------------------------------------------------------------ */
 
 export async function forgeWithOpenRouter({ input, domainLabel = "General", rigor = "standard", model }) {
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+  return forgeModelCall({
+    provider: "openrouter",
+    domainLabel,
+    request: async (extra) => {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        },
+        signal: AbortSignal.timeout(90000),
+        body: JSON.stringify({
+          model: model || process.env.OPENROUTER_MODEL || MODEL_CATALOG.openrouter.default,
+          max_tokens: 4096,
+          temperature: 0.3,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: buildUserMessage(input.trim(), domainLabel, rigor) + extra },
+          ],
+        }),
+      });
+
+      if (!res.ok) throw await upstreamError("openrouter", res);
+
+      const data = await res.json();
+      const choice = data?.choices?.[0];
+      return {
+        text: choice?.message?.content || "",
+        truncated: choice?.finish_reason === "length",
+      };
     },
-    signal: AbortSignal.timeout(90000),
-    body: JSON.stringify({
-      model: model || process.env.OPENROUTER_MODEL || MODEL_CATALOG.openrouter.default,
-      max_tokens: 1200,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserMessage(input.trim(), domainLabel, rigor) },
-      ],
-    }),
   });
-
-  if (!res.ok) throw await upstreamError("openrouter", res);
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content || "";
-  const result = normalizeModelResult(extractJson(text), domainLabel);
-  if (!result) throw new Error("malformed openrouter response");
-  return result;
 }
 
 /* ------------------------------------------------------------------ */
@@ -420,39 +473,44 @@ export async function forgeWithGemini({ input, domainLabel = "General", rigor = 
   let lastError = null;
   for (const model of candidates) {
     try {
-      return await geminiGenerate({ apiKey, model, input, domainLabel, rigor });
+      return await forgeModelCall({
+        provider: "gemini",
+        domainLabel,
+        request: async (extra) => {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              signal: AbortSignal.timeout(90000),
+              body: JSON.stringify({
+                system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                contents: [
+                  { role: "user", parts: [{ text: buildUserMessage(input.trim(), domainLabel, rigor) + extra }] },
+                ],
+                generationConfig: { maxOutputTokens: 4096, temperature: 0.3 },
+              }),
+            }
+          );
+
+          if (!res.ok) throw await upstreamError("gemini", res);
+
+          const data = await res.json();
+          const text = (data?.candidates?.[0]?.content?.parts || [])
+            .map((p) => p.text || "")
+            .join("\n");
+          return {
+            text,
+            truncated: data?.candidates?.[0]?.finishReason === "MAX_TOKENS",
+          };
+        },
+      });
     } catch (err) {
       lastError = err;
       if (![404, 429, 500, 503].includes(err.status)) throw err;
     }
   }
   throw lastError;
-}
-
-async function geminiGenerate({ apiKey, model, input, domainLabel, rigor }) {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(90000),
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: "user", parts: [{ text: buildUserMessage(input.trim(), domainLabel, rigor) }] }],
-        generationConfig: { maxOutputTokens: 1200, temperature: 0.3 },
-      }),
-    }
-  );
-
-  if (!res.ok) throw await upstreamError("gemini", res);
-
-  const data = await res.json();
-  const text = (data?.candidates?.[0]?.content?.parts || [])
-    .map((p) => p.text || "")
-    .join("\n");
-  const result = normalizeModelResult(extractJson(text), domainLabel);
-  if (!result) throw new Error("malformed gemini response");
-  return result;
 }
 
 /* ------------------------------------------------------------------ */
