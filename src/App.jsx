@@ -16,6 +16,9 @@ import { estimateTokens, formatPercent, copyText } from "./lib/utils.js";
 import InputPanel from "./components/InputPanel.jsx";
 import OutputPanel from "./components/OutputPanel.jsx";
 import HistorySection from "./components/HistorySection.jsx";
+import ParticleField from "./components/ParticleField.jsx";
+import CursorGlow from "./components/CursorGlow.jsx";
+import CelebrationBurst from "./components/CelebrationBurst.jsx";
 
 const HISTORY_KEY = "prompt-forge-history";
 const DRAFT_KEY = "prompt-forge-draft";
@@ -77,6 +80,7 @@ export default function App() {
   const [engineInfo, setEngineInfo] = useState(null);
   const [engineChoice, setEngineChoice] = useState("");
   const [modelChoice, setModelChoice] = useState("");
+  const [celebrationTrigger, setCelebrationTrigger] = useState(0);
   const intervalRef = useRef(null);
   const copiedTimer = useRef(null);
 
@@ -170,6 +174,7 @@ export default function App() {
       if (!res.ok) throw new Error(data.error || "Generation failed. Try again.");
 
       setResult(data);
+      setCelebrationTrigger((t) => t + 1);
 
       const entry = {
         id: Date.now().toString(),
@@ -309,6 +314,9 @@ export default function App() {
 
   return (
     <div className="wrap">
+      <ParticleField />
+      <CursorGlow />
+      <CelebrationBurst trigger={celebrationTrigger} />
       <div className="bg-layer" aria-hidden="true" />
       <div className="bg-mesh" aria-hidden="true" />
       <div className="bg-grid" aria-hidden="true" />
@@ -343,18 +351,17 @@ export default function App() {
         <p className="hero-sub reveal" style={{ animationDelay: "160ms" }}>
           Describe what you want in plain language. Prompt Forge turns it into a precise,
           structured prompt using the techniques that actually move model output.
-        </p>
-        <div className="hero-features reveal" style={{ animationDelay: "240ms" }}>
-          <span className="feature-chip">
+        </p>          <div className="hero-features reveal" style={{ animationDelay: "240ms" }}>
+          <span className="feature-chip stagger-1">
             <Wand2 size={14} /> Role &amp; context binding
           </span>
-          <span className="feature-chip">
+          <span className="feature-chip stagger-2">
             <Layers size={14} /> Structure &amp; output format
           </span>
-          <span className="feature-chip">
+          <span className="feature-chip stagger-3">
             <ShieldCheck size={14} /> Edge cases &amp; constraints
           </span>
-          <span className="feature-chip">
+          <span className="feature-chip stagger-4">
             <Zap size={14} /> Ready to paste, in seconds
           </span>
         </div>

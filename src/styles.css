@@ -1478,6 +1478,333 @@ h1.hero-title {
 }
 
 /* ------------------------------------------------------------------ */
+/* Enhanced animations & glassmorphism polish                          */
+/* ------------------------------------------------------------------ */
+
+/* Animated gradient border on glass panels */
+.glass {
+  position: relative;
+}
+
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    var(--border-angle, 0deg),
+    rgba(45, 212, 191, 0.3),
+    rgba(99, 102, 241, 0.15),
+    rgba(244, 114, 182, 0.2),
+    rgba(45, 212, 191, 0.3)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 1;
+  animation: borderRotate 6s linear infinite;
+}
+
+.glass:hover::before {
+  opacity: 1;
+}
+
+[data-theme="light"] .glass::before {
+  background: linear-gradient(
+    var(--border-angle, 0deg),
+    rgba(251, 146, 60, 0.35),
+    rgba(244, 114, 182, 0.2),
+    rgba(251, 191, 36, 0.25),
+    rgba(251, 146, 60, 0.35)
+  );
+}
+
+@keyframes borderRotate {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Aurora / glass shimmer sweep on panels */
+.panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04),
+    transparent
+  );
+  z-index: 2;
+  pointer-events: none;
+  transition: left 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme="light"] .panel::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+}
+
+.panel:hover::after {
+  left: 120%;
+}
+
+/* Staggered card entrance */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 120ms; }
+.stagger-3 { animation-delay: 190ms; }
+.stagger-4 { animation-delay: 260ms; }
+.stagger-5 { animation-delay: 330ms; }
+.stagger-6 { animation-delay: 400ms; }
+
+/* Floating animation for ambient elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+.float { animation: float 4s ease-in-out infinite; }
+.float-slow { animation: floatSlow 6s ease-in-out infinite; }
+
+/* Glowing pulse ring for buttons */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: var(--gradient);
+  background-size: 200% 200%;
+  z-index: -1;
+  opacity: 0;
+  filter: blur(12px);
+  transition: opacity 0.3s ease;
+  animation: gradientFlow 3s ease-in-out infinite alternate;
+}
+
+.btn-primary:hover::after {
+  opacity: 0.5;
+}
+
+/* Chip magnetic hover feel */
+.feature-chip {
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), var(--accent-glow), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.feature-chip:hover::before {
+  opacity: 0.15;
+}
+
+/* Glowing text shadow for hero */
+.hero-title .grad {
+  text-shadow: 0 0 40px rgba(45, 212, 191, 0.15);
+}
+
+[data-theme="light"] .hero-title .grad {
+  text-shadow: 0 0 40px rgba(251, 146, 60, 0.15);
+}
+
+/* Pulsing glow on active chip */
+.chip.active {
+  animation: chipGlow 2s ease-in-out infinite;
+}
+
+@keyframes chipGlow {
+  0%, 100% { box-shadow: 0 0 12px var(--accent-glow); }
+  50% { box-shadow: 0 0 24px var(--accent-glow), 0 0 48px rgba(45, 212, 191, 0.08); }
+}
+
+/* History card hover glow trail */
+.history-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), var(--accent-glow), transparent 55%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.history-card:hover::before {
+  opacity: 0.12;
+}
+
+/* Scrollbar glow */
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 6px transparent;
+  transition: box-shadow 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Prompt box animated border on result */
+.result .prompt-box {
+  animation: fadeIn 0.4s ease both, promptBorderGlow 3s ease-in-out infinite;
+}
+
+@keyframes promptBorderGlow {
+  0%, 100% { border-color: var(--glass-border); }
+  50% { border-color: rgba(45, 212, 191, 0.25); }
+}
+
+[data-theme="light"] .result .prompt-box {
+  animation: fadeIn 0.4s ease both, promptBorderGlowLight 3s ease-in-out infinite;
+}
+
+@keyframes promptBorderGlowLight {
+  0%, 100% { border-color: var(--glass-border); }
+  50% { border-color: rgba(251, 146, 60, 0.3); }
+}
+
+/* Badge shimmer */
+.badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmerSweep 4s ease-in-out infinite;
+}
+
+@keyframes shimmerSweep {
+  0%, 70%, 100% { left: -100%; }
+  90% { left: 150%; }
+}
+
+/* Theme toggle aurora ring */
+.theme-toggle {
+  position: relative;
+}
+
+.theme-toggle::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, var(--accent), var(--purple), var(--pink), var(--accent));
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  filter: blur(4px);
+}
+
+.theme-toggle:hover::before {
+  opacity: 0.6;
+}
+
+/* Result domain/engine badge shimmer */
+.result-domain,
+.result-engine {
+  position: relative;
+  overflow: hidden;
+}
+
+.result-domain::after,
+.result-engine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmerSweep 3.5s ease-in-out infinite;
+}
+
+/* Usage bar glow pulse */
+.bar-fill {
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
+  animation: growBar 0.8s cubic-bezier(0.22, 1, 0.36, 1) both,
+             shimmer 2.5s linear infinite,
+             barGlow 2s ease-in-out infinite;
+}
+
+@keyframes barGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(45, 212, 191, 0.2); }
+  50% { box-shadow: 0 0 14px rgba(45, 212, 191, 0.4), 0 0 28px rgba(45, 212, 191, 0.1); }
+}
+
+/* Icon button ripple */
+.icon-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at center, var(--accent-glow), transparent 70%);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.icon-btn:active::after {
+  opacity: 0.2;
+  transform: scale(1.2);
+}
+
+/* ------------------------------------------------------------------ */
 /* Scrollbars                                                          */
 /* ------------------------------------------------------------------ */
 
