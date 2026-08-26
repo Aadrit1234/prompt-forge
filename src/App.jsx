@@ -16,8 +16,6 @@ import { estimateTokens, formatPercent, copyText } from "./lib/utils.js";
 import InputPanel from "./components/InputPanel.jsx";
 import OutputPanel from "./components/OutputPanel.jsx";
 import HistorySection from "./components/HistorySection.jsx";
-import ParticleField from "./components/ParticleField.jsx";
-import CursorGlow from "./components/CursorGlow.jsx";
 import CelebrationBurst from "./components/CelebrationBurst.jsx";
 
 const HISTORY_KEY = "prompt-forge-history";
@@ -314,15 +312,8 @@ export default function App() {
 
   return (
     <div className="wrap">
-      <ParticleField />
-      <CursorGlow />
       <CelebrationBurst trigger={celebrationTrigger} />
       <div className="bg-layer" aria-hidden="true" />
-      <div className="bg-mesh" aria-hidden="true" />
-      <div className="bg-grid" aria-hidden="true" />
-      <div className="blob blob-1" aria-hidden="true" />
-      <div className="blob blob-2" aria-hidden="true" />
-      <div className="blob blob-3" aria-hidden="true" />
 
       {/* Hero */}
       <header className="hero">
