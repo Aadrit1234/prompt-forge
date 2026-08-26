@@ -17,6 +17,7 @@ import InputPanel from "./components/InputPanel.jsx";
 import OutputPanel from "./components/OutputPanel.jsx";
 import HistorySection from "./components/HistorySection.jsx";
 import CelebrationBurst from "./components/CelebrationBurst.jsx";
+import CursorGlow from "./components/CursorGlow.jsx";
 
 const HISTORY_KEY = "prompt-forge-history";
 const DRAFT_KEY = "prompt-forge-draft";
@@ -312,6 +313,7 @@ export default function App() {
 
   return (
     <div className="wrap">
+      <CursorGlow />
       <CelebrationBurst trigger={celebrationTrigger} />
       <div className="bg-layer" aria-hidden="true" />
 
