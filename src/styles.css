@@ -98,7 +98,7 @@ body {
 
 :root[data-theme="light"] .bg-layer {
   background:
-    radial-gradient(ellipse at 50% 50%, #E1F5FE 0%, #B3E5FC 30%, #4FC3F7 60%, #039BE5 100%);
+    radial-gradient(ellipse at 50% 50%, #FFFFFF 0%, #F0F9FF 30%, #E0F2FE 60%, #CFF4FC 100%);
 }
 
 /* ------------------------------------------------------------------ */
