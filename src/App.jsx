@@ -16,7 +16,6 @@ import { estimateTokens, formatPercent, copyText } from "./lib/utils.js";
 import InputPanel from "./components/InputPanel.jsx";
 import OutputPanel from "./components/OutputPanel.jsx";
 import HistorySection from "./components/HistorySection.jsx";
-import CelebrationBurst from "./components/CelebrationBurst.jsx";
 import CursorGlow from "./components/CursorGlow.jsx";
 
 const HISTORY_KEY = "prompt-forge-history";
@@ -79,7 +78,6 @@ export default function App() {
   const [engineInfo, setEngineInfo] = useState(null);
   const [engineChoice, setEngineChoice] = useState("");
   const [modelChoice, setModelChoice] = useState("");
-  const [celebrationTrigger, setCelebrationTrigger] = useState(0);
   const intervalRef = useRef(null);
   const copiedTimer = useRef(null);
 
@@ -173,8 +171,6 @@ export default function App() {
       if (!res.ok) throw new Error(data.error || "Generation failed. Try again.");
 
       setResult(data);
-      setCelebrationTrigger((t) => t + 1);
-
       const entry = {
         id: Date.now().toString(),
         input: input.trim(),
@@ -314,7 +310,6 @@ export default function App() {
   return (
     <div className="wrap">
       <CursorGlow />
-      <CelebrationBurst trigger={celebrationTrigger} />
       <div className="bg-layer" aria-hidden="true" />
 
       {/* Hero */}
