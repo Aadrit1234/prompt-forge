@@ -163,7 +163,7 @@ body {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .glass:hover {
@@ -214,7 +214,6 @@ body {
 .theme-toggle:hover {
   border-color: var(--accent);
   color: var(--accent-strong);
-  transform: translateY(-1px);
 }
 
 .badge {
@@ -320,7 +319,6 @@ h1.hero-title {
 }
 
 .feature-chip:hover {
-  transform: translateY(-2px);
   border-color: var(--accent);
 }
 
@@ -353,20 +351,11 @@ h1.hero-title {
 }
 
 .panel:hover {
-  transform: translateY(-2px);
 }
 
 /* 3D tilt effect */
 .tilt {
-  transform-style: preserve-3d;
-  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.25s ease,
-              border-color 0.25s ease;
-  will-change: transform;
-}
-
-.tilt:hover {
-  transform: perspective(600px) rotateY(0deg) rotateX(0deg) scale3d(1.01, 1.01, 1);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .panel-tab {
@@ -453,7 +442,6 @@ h1.hero-title {
 .chip:hover {
   border-color: var(--glass-border-strong);
   color: var(--text-1);
-  transform: translateY(-1px);
 }
 
 .chip.active {
@@ -654,7 +642,6 @@ h1.hero-title {
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
   box-shadow: 0 8px 28px rgba(56, 189, 248, 0.35);
 }
 
@@ -701,7 +688,6 @@ h1.hero-title {
 .btn-ghost:hover {
   border-color: var(--glass-border-strong);
   color: var(--text-1);
-  transform: translateY(-1px);
 }
 
 .btn-ghost.success {
@@ -908,7 +894,6 @@ h1.hero-title {
 
 .icon-btn:hover {
   color: var(--text-1);
-  transform: translateY(-1px);
 }
 
 .icon-btn.success {
@@ -1130,7 +1115,6 @@ h1.hero-title {
 .history-tool-btn:hover {
   border-color: var(--glass-border-strong);
   color: var(--text-1);
-  transform: translateY(-1px);
 }
 
 .history-tool-btn.danger:hover {
@@ -1215,7 +1199,6 @@ h1.hero-title {
 }
 
 .history-card:hover {
-  transform: translateY(-3px);
   border-color: var(--glass-border-strong);
   box-shadow: var(--shadow-lg);
 }
