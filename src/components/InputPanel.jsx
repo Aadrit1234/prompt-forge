@@ -13,7 +13,6 @@ import {
   Cpu,
 } from "lucide-react";
 import { DOMAINS, EXAMPLES, RIGOR_OPTIONS } from "../lib/constants.js";
-import { useTilt } from "../lib/utils.js";
 
 const ENGINE_NAMES = { openrouter: "OpenRouter", gemini: "Gemini" };
 
@@ -43,7 +42,6 @@ export default function InputPanel({
   modelChoice = "",
   onModelChange,
 }) {
-  const tilt = useTilt(6, 1.015);
   const canGenerate = input.trim().length > 0 && !loading;
 
   // Show the selected model; if it's not in the curated list (e.g. a custom
@@ -64,10 +62,7 @@ export default function InputPanel({
 
   return (
     <section
-      ref={tilt.ref}
-      onMouseMove={tilt.onMouseMove}
-      onMouseLeave={tilt.onMouseLeave}
-      className="panel glass tilt"
+      className="panel glass"
       aria-label="Task input"
     >
       <div className="panel-tab">
