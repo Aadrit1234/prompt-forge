@@ -19,6 +19,36 @@ export function formatPercent(p) {
   return `${Math.round(p)}%`;
 }
 
+import { useCallback, useRef } from "react";
+
+/**\ * React hook: returns onMouseMove / onMouseLeave handlers and a ref
+ * that give the element a 3D tilt toward the cursor.\ * @param {number} maxDeg  max rotation in degrees (default 8)
+ * @param {number} scale   hover scale factor (default 1.02)
+ */
+export function useTilt(maxDeg = 8, scale = 1.02) {
+  const ref = useRef(null);
+
+  const onMouseMove = useCallback(
+    (e) => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;  // -0.5 → 0.5
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      el.style.transform = `perspective(600px) rotateY(${x * maxDeg}deg) rotateX(${-y * maxDeg}deg) scale3d(${scale},${scale},1)`;
+    },
+    [maxDeg, scale]
+  );
+
+  const onMouseLeave = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.transform = "perspective(600px) rotateY(0deg) rotateX(0deg) scale3d(1,1,1)";
+  }, []);
+
+  return { ref, onMouseMove, onMouseLeave };
+}
+
 export async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);

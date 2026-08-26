@@ -11,7 +11,7 @@ import {
   Tag,
 } from "lucide-react";
 import { LOADING_STEPS, PLAN_PRESETS } from "../lib/constants.js";
-import { formatPercent } from "../lib/utils.js";
+import { formatPercent, useTilt } from "../lib/utils.js";
 
 export default function OutputPanel({
   loading,
@@ -29,8 +29,16 @@ export default function OutputPanel({
   onDownload,
   engineLabel,
 }) {
+  const tilt = useTilt(6, 1.015);
+
   return (
-    <section className="panel" aria-label="Generated prompt">
+    <section
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      className="panel glass tilt"
+      aria-label="Generated prompt"
+    >
       <div className="panel-tab">
         <span className="panel-tab-left">
           <span className="tab-dot teal" />

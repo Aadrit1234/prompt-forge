@@ -54,15 +54,14 @@ function loadTheme() {
   try {
     return (
       localStorage.getItem(THEME_KEY) ||
-      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "dark")
     );
   } catch {
-    return "light";
+    return "dark";
   }
 }
 
 export default function App() {
-  // Restore the last draft (input + settings) and preferred theme on load.
   const [draft] = useState(loadDraft);
   const [input, setInput] = useState(() => draft?.input ?? "");
   const [domain, setDomain] = useState(() => draft?.domain ?? "general");
@@ -96,7 +95,6 @@ export default function App() {
       .catch(() => setEngineInfo(null));
   }, []);
 
-  // Persist theme and apply it to <html>.
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {
@@ -106,7 +104,6 @@ export default function App() {
     }
   }, [theme]);
 
-  // Autosave the draft (debounced) so a refresh never loses work.
   useEffect(() => {
     const t = setTimeout(() => {
       try {
@@ -126,7 +123,6 @@ export default function App() {
   }, []);
 
   function saveHistory(next) {
-    // Pinned entries are never evicted; the rest are capped at the newest 20.
     const pinned = next.filter((h) => h.pinned);
     const total = Math.max(20, pinned.length);
     const kept = [...pinned, ...next.filter((h) => !h.pinned)].sort((a, b) =>
@@ -272,7 +268,6 @@ export default function App() {
     }
   }
 
-  // Stats derived from local history.
   const stats = useMemo(() => {
     if (history.length === 0) return null;
     const domainCounts = {};
@@ -295,7 +290,6 @@ export default function App() {
   const tokenCount = result ? estimateTokens(result.optimized_prompt) : 0;
   const usagePercent = result ? (tokenCount / activePlan.dailyTokenBudget) * 100 : 0;
 
-  // Model picker: shown only when a keyed engine (OpenRouter/Gemini) is configured.
   const keyedEngines = KEYED_ENGINE_IDS.filter(
     (id) => engineInfo?.engines?.[id] && engineInfo?.models?.[id]
   );
@@ -316,9 +310,11 @@ export default function App() {
   return (
     <div className="wrap">
       <div className="bg-layer" aria-hidden="true" />
+      <div className="bg-mesh" aria-hidden="true" />
       <div className="bg-grid" aria-hidden="true" />
       <div className="blob blob-1" aria-hidden="true" />
       <div className="blob blob-2" aria-hidden="true" />
+      <div className="blob blob-3" aria-hidden="true" />
 
       {/* Hero */}
       <header className="hero">
