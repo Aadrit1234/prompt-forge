@@ -33,13 +33,13 @@
   color-scheme: dark;
 }
 
-/* Light theme — sky blue with white center */
+/* Light theme — cerulean to sky blue */
 :root[data-theme="light"] {
-  --bg: #e0ecf7;
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-bg-hover: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.7);
-  --glass-border-strong: rgba(255, 255, 255, 0.9);
+  --bg: #e8f4fa;
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #f8fbff;
+  --glass-border: rgba(8, 145, 178, 0.15);
+  --glass-border-strong: rgba(8, 145, 178, 0.3);
   --glass-blur: 24px;
   --text-1: #0f172a;
   --text-2: #475569;
@@ -52,7 +52,7 @@
   --amber-tint: rgba(217, 119, 6, 0.08);
   --red: #dc2626;
   --red-tint: rgba(220, 38, 38, 0.06);
-  --gradient: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+  --gradient: linear-gradient(135deg, #0891b2 0%, #7dd3fc 100%);
   --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.07);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.1);
   --shadow-glow: none;
@@ -287,7 +287,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .hero-title .grad {
-  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+  background: linear-gradient(135deg, #0891b2 0%, #0ea5e9 50%, #7dd3fc 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -385,7 +385,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .panel-tab {
-  background: rgba(255, 255, 255, 0.25);
+  background: #ffffff;
 }
 
 .panel-tab-left {
@@ -488,7 +488,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .forge-input {
-  background: rgba(255, 255, 255, 0.4);
+  background: #ffffff;
 }
 
 .forge-input::placeholder {
@@ -546,7 +546,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .model-select {
-  background: rgba(255, 255, 255, 0.4);
+  background: #ffffff;
 }
 
 .model-select:hover {
@@ -602,7 +602,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .segmented {
-  background: rgba(255, 255, 255, 0.35);
+  background: #f0f9ff;
 }
 
 .segmented button {
@@ -655,7 +655,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .btn-primary {
-  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.2);
+  box-shadow: 0 4px 16px rgba(8, 145, 178, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -664,7 +664,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 8px 28px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 8px 28px rgba(8, 145, 178, 0.3);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -882,7 +882,7 @@ h1.hero-title {
 }
 
 [data-theme="light"] .prompt-box {
-  background: rgba(255, 255, 255, 0.35);
+  background: #ffffff;
 }
 
 .prompt-box-actions {
