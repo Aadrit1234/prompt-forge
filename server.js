@@ -191,26 +191,18 @@ app.post("/api/generate", async (req, res) => {
       return res.json({ engine: name, ...forged });
     } catch (err) {
       console.error(`[forge] ${name} failed:`, err.message);
-      if (KEYED_ENGINES.includes(name)) {
-        const status = err.status === 401 ? 502 : err.status || 502;
+      if (KEYED_ENGINES.includes(name) && err.status === 401) {
+        // Auth failure — no point trying other engines with this key.
         const keyVar = {
           openrouter: "OPENROUTER_API_KEY",
           gemini: "GOOGLE_API_KEY (or GEMINI_API_KEY)",
           anthropic: "ANTHROPIC_API_KEY",
         }[name];
-        const message =
-          err.status === 401
-            ? `${engine.label} rejected the API key. Check ${keyVar} on the server.`
-            : err.name === "TimeoutError"
-              ? `${engine.label} timed out waiting for the model. Try again in a moment.`
-              : err.reason === "truncated"
-                ? "The model's response was cut off before it finished. Try again."
-                : err.reason === "malformed"
-                  ? "The model returned an unparseable response. Try again."
-                  : `The model call failed (${err.status || "network error"}). Try again in a moment.`;
-        return res.status(status).json({ error: message });
+        const message = `${engine.label} rejected the API key. Check ${keyVar} on the server.`;
+        return res.status(502).json({ error: message });
       }
-      // Ollama failed — fall through to the next engine (usually local).
+      // Timeout, truncation, malformed, or other transient errors —
+      // fall through to the next engine (e.g. gemini → ollama → local).
     }
   }
 

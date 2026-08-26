@@ -91,11 +91,13 @@ const CONCISE_NUDGE =
  */
 async function forgeModelCall({ provider, domainLabel, request }) {
   let truncated = false;
+  const deadline = Date.now() + 28_000; // leave headroom before Vercel's timeout
   for (const extra of ["", CONCISE_NUDGE]) {
     const { text, truncated: wasTruncated } = await request(extra);
     truncated = truncated || wasTruncated;
     const result = normalizeModelResult(extractJson(text), domainLabel);
     if (result) return result;
+    if (Date.now() >= deadline) break; // don't retry — not enough time left
   }
   const err = new Error(
     truncated
@@ -356,7 +358,7 @@ export async function forgeWithOllama({ input, domainLabel = "General", rigor = 
       const res = await fetch(`${ollamaUrl()}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(90000),
+        signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
           model,
           stream: false,
@@ -392,7 +394,7 @@ export async function forgeWithAnthropic({ input, domainLabel = "General", rigor
           "x-api-key": process.env.ANTHROPIC_API_KEY,
           "anthropic-version": "2023-06-01",
         },
-        signal: AbortSignal.timeout(90000),
+        signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
           model: model || process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5",
           max_tokens: 4096,
@@ -429,7 +431,7 @@ export async function forgeWithOpenRouter({ input, domainLabel = "General", rigo
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         },
-        signal: AbortSignal.timeout(90000),
+        signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
           model: model || process.env.OPENROUTER_MODEL || MODEL_CATALOG.openrouter.default,
           max_tokens: 4096,
@@ -482,7 +484,7 @@ export async function forgeWithGemini({ input, domainLabel = "General", rigor = 
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              signal: AbortSignal.timeout(90000),
+              signal: AbortSignal.timeout(30000),
               body: JSON.stringify({
                 system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
                 contents: [
